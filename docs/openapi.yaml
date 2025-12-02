@@ -1,0 +1,1041 @@
+openapi: 3.0.3
+info:
+  title: BuzzLink API
+  description: Real-time collaboration platform with workspaces, channels, direct messaging, and analytics
+  version: 1.0.0
+  contact:
+    name: BuzzLink Team
+    email: support@buzzlink.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: http://184.169.147.113:8080
+    description: Production server
+
+tags:
+  - name: Direct Messages
+    description: One-on-one messaging between users
+  - name: Workspaces
+    description: Workspace management and configuration
+  - name: Channels
+    description: Channel operations within workspaces
+  - name: Invitations
+    description: Workspace invitation management
+  - name: Notifications
+    description: User notifications
+  - name: Message Threading
+    description: Threaded conversations
+  - name: User Management
+    description: User operations and search
+  - name: Analytics
+    description: Workspace analytics and metrics
+
+paths:
+  /api/direct-messages/{recipientClerkId}:
+    get:
+      tags:
+        - Direct Messages
+      summary: Get DM conversation
+      description: Retrieve direct message conversation with a specific user
+      parameters:
+        - name: recipientClerkId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Clerk ID of the recipient
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+
+  /api/direct-messages:
+    post:
+      tags:
+        - Direct Messages
+      summary: Send DM
+      description: Send a direct message to another user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectMessageRequest'
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /api/workspaces:
+    get:
+      tags:
+        - Workspaces
+      summary: List user's workspaces
+      description: Get all workspaces the user is a member of
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+        '401':
+          description: Unauthorized
+
+    post:
+      tags:
+        - Workspaces
+      summary: Create workspace
+      description: Create a new workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceCreateRequest'
+      responses:
+        '201':
+          description: Workspace created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /api/workspaces/{id}:
+    get:
+      tags:
+        - Workspaces
+      summary: Get workspace details
+      description: Retrieve detailed information about a workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+    put:
+      tags:
+        - Workspaces
+      summary: Update workspace
+      description: Update workspace details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceUpdateRequest'
+      responses:
+        '200':
+          description: Workspace updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+    delete:
+      tags:
+        - Workspaces
+      summary: Delete workspace
+      description: Delete a workspace (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Workspace deleted successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Workspace not found
+
+  /api/workspaces/{id}/channels:
+    get:
+      tags:
+        - Channels
+      summary: Get workspace channels
+      description: List all channels in a workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Channel'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+    post:
+      tags:
+        - Channels
+      summary: Create channel in workspace
+      description: Create a new channel within a workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelCreateRequest'
+      responses:
+        '201':
+          description: Channel created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+  /api/workspaces/{id}/members:
+    get:
+      tags:
+        - Workspaces
+      summary: List workspace members
+      description: Get all members of a workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkspaceMember'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+  /api/workspaces/{id}/members/{userId}/role:
+    post:
+      tags:
+        - Workspaces
+      summary: Update member role
+      description: Change a member's role in the workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [ADMIN, MEMBER]
+      responses:
+        '200':
+          description: Role updated successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Workspace or user not found
+
+  /api/workspaces/{id}/members/{userId}:
+    delete:
+      tags:
+        - Workspaces
+      summary: Remove member
+      description: Remove a member from the workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Member removed successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Workspace or user not found
+
+  /api/workspaces/{id}/invitations:
+    post:
+      tags:
+        - Invitations
+      summary: Send invitation
+      description: Send a workspace invitation to a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationRequest'
+      responses:
+        '201':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+  /api/invitations:
+    get:
+      tags:
+        - Invitations
+      summary: List user's invitations
+      description: Get all pending invitations for the current user
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invitation'
+        '401':
+          description: Unauthorized
+
+  /api/invitations/{token}/accept:
+    post:
+      tags:
+        - Invitations
+      summary: Accept invitation
+      description: Accept a workspace invitation
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invitation accepted successfully
+        '400':
+          description: Invalid or expired token
+        '401':
+          description: Unauthorized
+        '404':
+          description: Invitation not found
+
+  /api/invitations/{token}/decline:
+    post:
+      tags:
+        - Invitations
+      summary: Decline invitation
+      description: Decline a workspace invitation
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invitation declined successfully
+        '400':
+          description: Invalid or expired token
+        '401':
+          description: Unauthorized
+        '404':
+          description: Invitation not found
+
+  /api/notifications:
+    get:
+      tags:
+        - Notifications
+      summary: List user's notifications
+      description: Get all notifications for the current user
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthorized
+
+  /api/notifications/{id}/read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Mark a specific notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Notification marked as read
+        '401':
+          description: Unauthorized
+        '404':
+          description: Notification not found
+
+  /api/notifications/read-all:
+    put:
+      tags:
+        - Notifications
+      summary: Mark all as read
+      description: Mark all user notifications as read
+      responses:
+        '200':
+          description: All notifications marked as read
+        '401':
+          description: Unauthorized
+
+  /api/notifications/{id}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete notification
+      description: Delete a specific notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Notification deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Notification not found
+
+  /api/messages/{messageId}/replies:
+    get:
+      tags:
+        - Message Threading
+      summary: Get thread replies
+      description: Get all replies to a specific message
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Message not found
+
+    post:
+      tags:
+        - Message Threading
+      summary: Reply to thread
+      description: Add a reply to a message thread
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageReplyRequest'
+      responses:
+        '201':
+          description: Reply created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Message not found
+
+  /api/users:
+    get:
+      tags:
+        - User Management
+      summary: Search/list users
+      description: Search or list users in the system
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+          description: Search query for user name or email
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+
+  /api/users/{clerkId}:
+    get:
+      tags:
+        - User Management
+      summary: Get user by Clerk ID
+      description: Retrieve user information by their Clerk ID
+      parameters:
+        - name: clerkId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+
+  /api/analytics/workspace/{workspaceId}/overview:
+    get:
+      tags:
+        - Analytics
+      summary: Workspace stats
+      description: Get overview statistics for a workspace
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceOverview'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+  /api/analytics/workspace/{workspaceId}/activity:
+    get:
+      tags:
+        - Analytics
+      summary: Activity over time
+      description: Get workspace activity metrics over time
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityMetrics'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+  /api/analytics/workspace/{workspaceId}/top-users:
+    get:
+      tags:
+        - Analytics
+      summary: Most active users
+      description: Get the most active users in a workspace
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopUser'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+  /api/analytics/workspace/{workspaceId}/top-channels:
+    get:
+      tags:
+        - Analytics
+      summary: Most active channels
+      description: Get the most active channels in a workspace
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopChannel'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Workspace not found
+
+components:
+  schemas:
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        content:
+          type: string
+        senderClerkId:
+          type: string
+        senderName:
+          type: string
+        senderAvatar:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        parentMessageId:
+          type: integer
+          format: int64
+          nullable: true
+        replyCount:
+          type: integer
+          default: 0
+
+    DirectMessageRequest:
+      type: object
+      required:
+        - recipientClerkId
+        - content
+      properties:
+        recipientClerkId:
+          type: string
+        content:
+          type: string
+
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        ownerId:
+          type: integer
+          format: int64
+        memberCount:
+          type: integer
+
+    WorkspaceCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    WorkspaceUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    Channel:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        workspaceId:
+          type: integer
+          format: int64
+        isPrivate:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    ChannelCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        isPrivate:
+          type: boolean
+          default: false
+
+    WorkspaceMember:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        userClerkId:
+          type: string
+        userName:
+          type: string
+        userAvatar:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, MEMBER]
+        joinedAt:
+          type: string
+          format: date-time
+
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        workspaceId:
+          type: integer
+          format: int64
+        workspaceName:
+          type: string
+        inviterName:
+          type: string
+        email:
+          type: string
+        token:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, DECLINED, EXPIRED]
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    InvitationRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum: [MESSAGE, MENTION, INVITATION, SYSTEM]
+        title:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        relatedEntityId:
+          type: integer
+          format: int64
+          nullable: true
+
+    MessageReplyRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        clerkId:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        avatar:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    WorkspaceOverview:
+      type: object
+      properties:
+        totalMembers:
+          type: integer
+        totalChannels:
+          type: integer
+        totalMessages:
+          type: integer
+        activeUsersToday:
+          type: integer
+        messagesLast7Days:
+          type: integer
+        messagesLast30Days:
+          type: integer
+
+    ActivityMetrics:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              messageCount:
+                type: integer
+              activeUsers:
+                type: integer
+
+    TopUser:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        userName:
+          type: string
+        userAvatar:
+          type: string
+        messageCount:
+          type: integer
+
+    TopChannel:
+      type: object
+      properties:
+        channelId:
+          type: integer
+          format: int64
+        channelName:
+          type: string
+        messageCount:
+          type: integer
+
+  securitySchemes:
+    clerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk JWT token for authentication
+
+security:
+  - clerkAuth: []

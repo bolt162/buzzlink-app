@@ -1,0 +1,62 @@
+# Alternative: GitHub Actions CI/CD (if you prefer this over Jenkins)
+# This file provides an alternative to Jenkins using GitHub Actions
+# You can use either Jenkins OR GitHub Actions, not both
+
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  EC2_HOST: 184.169.147.113
+  EC2_USER: ubuntu
+  PROJECT_PATH: /home/ubuntu/BuzzLink
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ env.EC2_USER }}@${{ env.EC2_HOST }} << 'ENDSSH'
+            cd ${{ env.PROJECT_PATH }}
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+
+            # Wait for services
+            sleep 30
+
+            # Health checks
+            curl -f http://localhost:8080/actuator/health || exit 1
+            curl -f http://localhost:3000 || exit 1
+
+            echo "Deployment successful!"
+          ENDSSH
+
+      - name: Verify Deployment
+        run: |
+          sleep 10
+          curl -f http://${{ env.EC2_HOST }}:8080/actuator/health
+          curl -f http://${{ env.EC2_HOST }}:3000
+
+      - name: Notify on Success
+        if: success()
+        run: echo "✅ Deployment successful!"
+
+      - name: Notify on Failure
+        if: failure()
+        run: echo "❌ Deployment failed!"
