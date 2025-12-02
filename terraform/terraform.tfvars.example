@@ -1,0 +1,17 @@
+# AWS Configuration
+aws_region    = "us-east-1"
+project_name  = "buzzlink"
+instance_type = "t2.micro"
+
+# SSH Configuration
+public_key_path  = "~/.ssh/id_rsa.pub"
+allowed_ssh_cidr = ["YOUR_IP_ADDRESS/32"] # Replace with your IP address
+
+# Application Configuration
+github_repo = "https://github.com/yourusername/BuzzLink.git" # Replace with your repo URL
+
+# Clerk Configuration
+clerk_publishable_key = "pk_test_xxxxx" # Replace with your Clerk publishable key
+
+# Database Configuration
+postgres_password = "buzzlink_secure_password_123" # Change this to a secure password

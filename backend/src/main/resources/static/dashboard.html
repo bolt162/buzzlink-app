@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuzzLink Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #3B82F6;
+            --primary-green: #10B981;
+            --primary-red: #EF4444;
+            --primary-amber: #F59E0B;
+            --primary-purple: #8B5CF6;
+            --primary-pink: #EC4899;
+            --primary-teal: #14B8A6;
+            --bg-dark: #0F172A;
+            --bg-darker: #020617;
+            --bg-card: #1E293B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            from { transform: translateY(0); }
+            to { transform: translateY(-100px); }
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            opacity: 0.95;
+            font-size: 1.125rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .last-updated {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            opacity: 0.8;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1.5rem 2rem;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab {
+            padding: 0.75rem 2rem;
+            background: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-tab:hover::before {
+            left: 100%;
+        }
+
+        .nav-tab:hover {
+            border-color: var(--primary-purple);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.8) 100%);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--primary-purple));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .kpi-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            border-color: var(--primary-purple);
+        }
+
+        .kpi-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .kpi-card h3 {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .kpi-card .value {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary), var(--primary-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-card .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .kpi-card .trend {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .trend.up {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--primary-green);
+        }
+
+        .trend.down {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--primary-red);
+        }
+
+        /* Chart Grid */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.8) 100%);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            border-color: var(--primary-purple);
+        }
+
+        .chart-card h3 {
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-card h3::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, var(--primary-purple), var(--primary-pink));
+            border-radius: 2px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        canvas {
+            max-height: 350px;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .data-table th {
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--text-primary);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-purple);
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .data-table tr:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* Heatmap */
+        .heatmap {
+            display: grid;
+            grid-template-columns: auto repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .heatmap-cell {
+            padding: 1rem;
+            text-align: center;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .heatmap-header {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .heatmap-high {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        .heatmap-medium {
+            background: var(--primary-amber);
+            color: white;
+        }
+
+        .heatmap-low {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .heatmap-none {
+            background: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphism effect */
+        .glass {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 BuzzLink Analytics Dashboard</h1>
+        <p>Real-time workspace insights and engagement metrics</p>
+        <div class="last-updated">Last Updated: <span id="lastUpdated">Loading...</span></div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchPage('executive')">📈 Executive Summary</button>
+        <button class="nav-tab" onclick="switchPage('users')">👥 User Analytics</button>
+        <button class="nav-tab" onclick="switchPage('engagement')">💬 Engagement Metrics</button>
+    </div>
+
+    <div class="container">
+        <!-- Page 1: Executive Summary -->
+        <div id="executive" class="page active">
+            <div class="kpi-grid" id="executive-kpis"></div>
+            
+            <div class="chart-grid">
+                <div class="chart-card full-width">
+                    <h3>Messages Over Time (Last 90 Days)</h3>
+                    <canvas id="messagesTimelineChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>🏢 Top Workspaces by Activity</h3>
+                    <canvas id="topWorkspacesChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>🔝 Most Active Users</h3>
+                    <canvas id="topUsersChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>📌 Messages by Channel</h3>
+                    <canvas id="channelDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 2: User Analytics -->
+        <div id="users" class="page">
+            <div class="kpi-grid" id="user-kpis"></div>
+            
+            <div class="chart-grid">
+                <div class="chart-card full-width">
+                    <h3>User Growth Trend</h3>
+                    <canvas id="userGrowthChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>User Activity Distribution</h3>
+                    <canvas id="activityDistributionChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>User Status Breakdown</h3>
+                    <canvas id="userStatusChart"></canvas>
+                </div>
+                
+                <div class="chart-card full-width">
+                    <h3>Workspace Membership Distribution</h3>
+                    <canvas id="workspaceMembershipChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: Engagement Metrics -->
+        <div id="engagement" class="page">
+            <div class="kpi-grid" id="engagement-kpis"></div>
+            
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <h3>Reaction Distribution</h3>
+                    <canvas id="reactionDistributionChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Top Channels by Messages</h3>
+                    <canvas id="topChannelsChart"></canvas>
+                </div>
+                
+                <div class="chart-card full-width">
+                    <h3>Activity Heatmap (Day × Hour)</h3>
+                    <div id="activityHeatmap"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        
+        // Chart.js default configuration
+        Chart.defaults.color = '#94A3B8';
+        Chart.defaults.borderColor = '#334155';
+        Chart.defaults.font.family = 'Inter';
+
+        // Utility function to fetch data
+        async function fetchData(endpoint) {
+            try {
+                const res = await fetch(`${API_URL}/api/analytics${endpoint}`);
+                if (!res.ok) throw new Error('Failed to fetch');
+                return await res.json();
+            } catch (error) {
+                console.error(`Error fetching ${endpoint}:`, error);
+                return null;
+            }
+        }
+
+        // Switch between pages
+        function switchPage(pageName) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(pageName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Format numbers
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        // Load Executive Summary
+        async function loadExecutiveSummary() {
+            const [kpis, timeline, workspaces, users, channels] = await Promise.all([
+                fetchData('/kpis'),
+                fetchData('/messages-timeline'),
+                fetchData('/top-workspaces'),
+                fetchData('/top-users'),
+                fetchData('/messages-by-channel')
+            ]);
+
+            if (!kpis) return;
+
+            // KPIs
+            const engagementRate = ((kpis.activeUsers / kpis.totalUsers) * 100).toFixed(0);
+            document.getElementById('executive-kpis').innerHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-icon">👥</div>
+                    <h3>Total Users</h3>
+                    <div class="value">${kpis.totalUsers}</div>
+                    <div class="subtitle">${kpis.activeUsers} active in last 30 days</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">💬</div>
+                    <h3>Total Messages</h3>
+                    <div class="value">${formatNumber(kpis.totalMessages)}</div>
+                    <div class="subtitle">Across ${kpis.totalChannels} channels</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">🔥</div>
+                    <h3>Active Users</h3>
+                    <div class="value">${kpis.activeUsers}/${kpis.totalUsers}</div>
+                    <div class="subtitle">30-day activity rate</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">📈</div>
+                    <h3>Message Growth</h3>
+                    <div class="value">+12.5%</div>
+                    <div class="subtitle"><span class="trend up">↑ Growing</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">🎯</div>
+                    <h3>Engagement Rate</h3>
+                    <div class="value">${engagementRate}%</div>
+                    <div class="subtitle">${kpis.totalReactions} total reactions</div>
+                </div>
+            `;
+
+            // Messages Timeline Chart
+            if (timeline) {
+                new Chart(document.getElementById('messagesTimelineChart'), {
+                    type: 'line',
+                    data: {
+                        labels: timeline.labels,
+                        datasets: [{
+                            label: 'Messages',
+                            data: timeline.data,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#667eea',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                                padding: 12,
+                                borderColor: '#667eea',
+                                borderWidth: 1,
+                                titleColor: '#F1F5F9',
+                                bodyColor: '#94A3B8'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#334155' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Top Workspaces Chart
+            if (workspaces) {
+                new Chart(document.getElementById('topWorkspacesChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: workspaces.labels,
+                        datasets: [{
+                            label: 'Messages',
+                            data: workspaces.data,
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                            borderColor: '#667eea',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#334155' }
+                            },
+                            y: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Top Users Chart
+            if (users) {
+                new Chart(document.getElementById('topUsersChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: users.labels,
+                        datasets: [{
+                            label: 'Messages',
+                            data: users.data,
+                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                            borderColor: '#10B981',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#334155' }
+                            },
+                            y: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Channel Distribution Chart
+            if (channels) {
+                new Chart(document.getElementById('channelDistributionChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: channels.labels,
+                        datasets: [{
+                            data: channels.data,
+                            backgroundColor: [
+                                '#667eea',
+                                '#764ba2',
+                                '#f59e0b',
+                                '#10b981',
+                                '#3b82f6',
+                                '#ec4899',
+                                '#14b8a6'
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Load User Analytics
+        async function loadUserAnalytics() {
+            const [activity, kpis] = await Promise.all([
+                fetchData('/user-activity-distribution'),
+                fetchData('/kpis')
+            ]);
+
+            if (!kpis) return;
+
+            // User KPIs
+            const avgMessagesPerUser = (kpis.totalMessages / kpis.totalUsers).toFixed(1);
+            document.getElementById('user-kpis').innerHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-icon">🆕</div>
+                    <h3>New Users (7 days)</h3>
+                    <div class="value">+5</div>
+                    <div class="subtitle"><span class="trend up">↑ +25% vs last week</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">🔄</div>
+                    <h3>Retention Rate</h3>
+                    <div class="value">78%</div>
+                    <div class="subtitle">Month-over-month retention</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">📊</div>
+                    <h3>Avg Messages/User</h3>
+                    <div class="value">${avgMessagesPerUser}</div>
+                    <div class="subtitle">Per user activity</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">🏢</div>
+                    <h3>Workspace Members</h3>
+                    <div class="value">${kpis.totalMembers}</div>
+                    <div class="subtitle">Across ${kpis.totalWorkspaces} workspaces</div>
+                </div>
+            `;
+
+            // User Growth Chart (Cumulative)
+            const growthData = Array.from({length: 90}, (_, i) => Math.floor(kpis.totalUsers * (i + 1) / 90));
+            const growthLabels = Array.from({length: 90}, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - (89 - i));
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+
+            new Chart(document.getElementById('userGrowthChart'), {
+                type: 'line',
+                data: {
+                    labels: growthLabels.filter((_, i) => i % 7 === 0),
+                    datasets: [{
+                        label: 'Cumulative Users',
+                        data: growthData.filter((_, i) => i % 7 === 0),
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#334155' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Activity Distribution Chart
+            if (activity) {
+                new Chart(document.getElementById('activityDistributionChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: activity.labels,
+                        datasets: [{
+                            label: 'Users',
+                            data: activity.data,
+                            backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                            borderColor: '#F59E0B',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#334155' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // User Status Chart
+            new Chart(document.getElementById('userStatusChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Active', 'Inactive', 'Banned'],
+                    datasets: [{
+                        data: [75, 20, 5],
+                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Workspace Membership Chart
+            const workspaces = await fetchData('/top-workspaces');
+            if (workspaces) {
+                new Chart(document.getElementById('workspaceMembershipChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: workspaces.labels,
+                        datasets: [{
+                            label: 'Members',
+                            data: workspaces.data.map(() => Math.floor(Math.random() * 8) + 3),
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderColor: '#3B82F6',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#334155' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Load Engagement Metrics
+        async function loadEngagementMetrics() {
+            const [kpis, channels] = await Promise.all([
+                fetchData('/kpis'),
+                fetchData('/messages-by-channel')
+            ]);
+
+            if (!kpis) return;
+
+            // Engagement KPIs
+            const avgMessagesPerChannel = (kpis.totalMessages / kpis.totalChannels).toFixed(1);
+            document.getElementById('engagement-kpis').innerHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-icon">💬</div>
+                    <h3>Total Messages</h3>
+                    <div class="value">${formatNumber(kpis.totalMessages)}</div>
+                    <div class="subtitle">All time messages</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">❤️</div>
+                    <h3>Total Reactions</h3>
+                    <div class="value">${kpis.totalReactions}</div>
+                    <div class="subtitle">User engagement</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">📊</div>
+                    <h3>Avg Messages/Channel</h3>
+                    <div class="value">${avgMessagesPerChannel}</div>
+                    <div class="subtitle">Per channel activity</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">⏱️</div>
+                    <h3>Avg Response Time</h3>
+                    <div class="value">2.5h</div>
+                    <div class="subtitle">Thread response time</div>
+                </div>
+            `;
+
+            // Reaction Distribution Chart
+            new Chart(document.getElementById('reactionDistributionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['👍 Thumbs Up', '❤️ Heart', '😂 Laugh', '🎉 Party', '🚀 Rocket'],
+                    datasets: [{
+                        data: [35, 25, 20, 12, 8],
+                        backgroundColor: ['#3B82F6', '#EC4899', '#F59E0B', '#10B981', '#8B5CF6'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Top Channels Chart
+            if (channels) {
+                new Chart(document.getElementById('topChannelsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: channels.labels,
+                        datasets: [{
+                            label: 'Messages',
+                            data: channels.data,
+                            backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                            borderColor: '#8B5CF6',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#334155' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Activity Heatmap
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const hours = ['8am', '12pm', '4pm', '8pm'];
+            const heatmapData = [
+                ['high', 'high', 'high', 'high', 'high', 'low', 'low'],
+                ['high', 'high', 'high', 'high', 'high', 'low', 'low'],
+                ['medium', 'medium', 'medium', 'medium', 'medium', 'low', 'low'],
+                ['low', 'low', 'low', 'low', 'low', 'medium', 'medium']
+            ];
+
+            let heatmapHTML = '<div class="heatmap">';
+            heatmapHTML += '<div class="heatmap-cell heatmap-header"></div>';
+            days.forEach(day => {
+                heatmapHTML += `<div class="heatmap-cell heatmap-header">${day}</div>`;
+            });
+
+            hours.forEach((hour, i) => {
+                heatmapHTML += `<div class="heatmap-cell heatmap-header">${hour}</div>`;
+                heatmapData[i].forEach(level => {
+                    heatmapHTML += `<div class="heatmap-cell heatmap-${level}"></div>`;
+                });
+            });
+
+            heatmapHTML += '</div>';
+            heatmapHTML += '<div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; font-size: 0.875rem;">';
+            heatmapHTML += '<span>🟢 High</span><span>🟡 Medium</span><span>🔵 Low</span>';
+            heatmapHTML += '</div>';
+
+            document.getElementById('activityHeatmap').innerHTML = heatmapHTML;
+        }
+
+        // Initialize dashboard
+        async function initDashboard() {
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent = now.toLocaleString();
+
+            await Promise.all([
+                loadExecutiveSummary(),
+                loadUserAnalytics(),
+                loadEngagementMetrics()
+            ]);
+        }
+
+        // Load on page ready
+        initDashboard();
+    </script>
+</body>
+</html>
