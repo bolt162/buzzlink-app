@@ -1,0 +1,72 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.buzzlink'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring Boot Data JPA
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Spring Boot WebSocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // Spring Boot Actuator (for Prometheus metrics)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Micrometer for Prometheus integration
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // PostgreSQL Driver
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // H2 Database for testing/demo (optional)
+    runtimeOnly 'com.h2database:h2'
+
+    // Lombok for reducing boilerplate
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Kafka (stub for notification service - design only)
+    implementation 'org.springframework.kafka:spring-kafka'
+
+    // JSON processing
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    // Email support
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
